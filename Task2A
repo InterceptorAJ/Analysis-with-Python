@@ -1,7 +1,7 @@
 import pandas as pd
+from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
 from matplotlib.ticker import StrMethodFormatter
 
 # dataset import
@@ -54,7 +54,7 @@ final_mean2 = np.mean(final_samples2)
 final_std2 = np.std(final_samples2)
 print (final_mean)
 
-#t-student test for the same:
+#t-student test for dependent values:
 population_births = dataset['births']
 sample_births1 = dataset['births'].sample(30)
 sample_births2 = dataset['births'].sample(20)
@@ -62,7 +62,7 @@ sample_births = np.concatenate((sample_births1, sample_births2))
 stats1 = stats.ttest_1samp(a=sample_births, popmean=population_births.mean())
 res = stats1.pvalue
 
-#t-student test for new sample:
+#t-student test for independent values (new sample):
 population_births = dataset['births']
 sample_births1_new = final_samples
 sample_births2_new = final_samples2
@@ -127,7 +127,7 @@ for y in sample_births_df_hist:
     y.set_title("")
 
     # Set x-axis label
-    y.set_xlabel("Liczba urodzin dla próbki nr1", labelpad=20, weight='bold', size=12)
+    y.set_xlabel("Liczba urodzin dla próbki nr1 (próbka zależna)", labelpad=20, weight='bold', size=12)
 
     # Set y-axis label
     y.set_ylabel("Liczba wystąpień", labelpad=20, weight='bold', size=12)
@@ -162,7 +162,7 @@ for z in sample_births_new_df_hist:
     z.set_title("")
 
     # Set x-axis label
-    z.set_xlabel("Liczba urodzin dla próbki nr2", labelpad=20, weight='bold', size=12)
+    z.set_xlabel("Liczba urodzin dla próbki nr2 (próbka niezależna)", labelpad=20, weight='bold', size=12)
 
     # Set y-axis label
     z.set_ylabel("Liczba wystąpień", labelpad=20, weight='bold', size=12)
@@ -195,26 +195,24 @@ else:
     exit()
 print ()
 print('---------------------------------------------------------------------------------------------------------------------------------')
-print ('Rozkład i średnia próbek: ')
-print("Ostateczny stan próbki nr1 (50 rekordów)   : średnia = {:.4f} stdv = {:.4f}".format(final_mean, final_std))
-print("Ostateczny stan próbki nr2 (50 rekordów)   : średnia = {:.4f} stdv = {:.4f}".format(final_mean2, final_std2))
-print('---------------------------------------------------------------------------------------------------------------------------------')
-print ('Sprawdzamy rozkład próby i porównujemy ze średnią w populacji: ')
-print ('Rozkład populacji: ' + str(population_births.mean()))
-print ('Rozkład próby: ' + str(sample_births.mean()))
-print (stats1)
-if res > 0.05:
-    print ('Rozkłady są zgodne!')
-else:
-    print ('Istotne różnice statystyczne!')
-print('---------------------------------------------------------------------------------------------------------------------------------')
-print ('Sprawdzamy rozkład próby i porównujemy ze średnią w populacji dla nowej próbki: ')
-print ('Rozkład populacji: ' + str(population_births.mean()))
-print ('Rozkład próby: ' + str(sample_births_new.mean()))
-print (stats2)
+print ('Sprawdzamy średnią próby niezależnej i porównujemy ze średnią w populacji: ')
+print ('Średnia wartość dla populacji: ' + '%.8f' % float(population_births.mean()))
+print ('Średnia wartość dla próby: ' + '%.8f' % float(sample_births_new.mean()))
+# print (stats2)
+print ('pvalue :' '%.8f' % res1)
 if res1 > 0.05:
-    print ('Rozkłady są zgodne!')
+    print ('Rozkłady są zgodne! - nie ma podstaw do odrzucenia Hipotezy')
 else:
-    print ('Istotne różnice statystyczne!')
+    print ('Istotne różnice statystyczne! - Hipoteza odrzucona')
+print('---------------------------------------------------------------------------------------------------------------------------------')
+print ('Sprawdzamy średnią próby zależnej i porównujemy ze średnią w populacji: ')
+print ('Średnia wartość dla populacji: ' + '%.8f' % float(population_births.mean()))
+print ('Średnia wartość dla próby: ' + '%.8f' % float(sample_births.mean()))
+# print (stats1)
+print ('pvalue :' '%.8f' % res)
+if res > 0.05:
+    print ('Rozkłady są zgodne! - nie ma podstaw do odrzucenia Hipotezy')
+else:
+    print ('Istotne różnice statystyczne! - Hipoteza odrzucona')
 print('---------------------------------------------------------------------------------------------------------------------------------')
 plt.show()
