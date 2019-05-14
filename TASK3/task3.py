@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import learning_curve
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.utils.multiclass import unique_labels
 
 
 
@@ -25,8 +26,59 @@ y = sonar_data["Class"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state=0)
 cv = ShuffleSplit(test_size=0.2, random_state=0)
 
+
+def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if not title:
+        if normalize:
+            title = 'Normalized confusion matrix'
+        else:
+            title = 'Confusion matrix, without normalization'
+
+    # Compute confusion matrix
+    cm = confusion_matrix(y_true, y_pred)
+    # Only use the labels that appear in the data
+    classes = ['Mina', 'Skała']
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+    ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(xticks=np.arange(cm.shape[1]),
+           yticks=np.arange(cm.shape[0]),
+           # ... and label them with the respective list entries
+           xticklabels=classes, yticklabels=classes,
+           title=title,
+           ylabel='Rzeczywistość',
+           xlabel='Predykcja')
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+             rotation_mode="anchor")
+
+    # Loop over data dimensions and create text annotations.
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], fmt),
+                    ha="center", va="center",
+                    color="white" if cm[i, j] > thresh else "black")
+    fig.tight_layout()
+    return ax
+
 # SVC linear classifier
-def svc_linear(X_train, X_test, y_train, y_test, results):
+def svc_linear(X_train, X_test, y_train, y_test, results, pierwszy):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją liniową')
     global a2
@@ -34,19 +86,9 @@ def svc_linear(X_train, X_test, y_train, y_test, results):
     a2.fit(X_train, y_train)
     global y_pred
     y_pred = a2.predict(X_test)
-    labels = ['M', 'R']
-    cm = confusion_matrix(y_test,y_pred, labels)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(cm)
-    plt.title('Macierz klasyfikacji dla funkcji liniowej')
-    fig.colorbar(cax)
-    ax.set_xticklabels([''] + labels)
-    ax.set_yticklabels([''] + labels)
-    plt.xlabel('Predykcja')
-    plt.ylabel('Rzeczywitość')
-    global a1
-    a1 = plt
+    labels = ['Mina', 'Skała']
+    plot_confusion_matrix(y_test, y_pred, classes=labels, title='Macierz klasyfikacji dla funkcji liniowej')
+    plt.savefig(f"{pierwszy}liniowy.png")
     print(classification_report(y_test,y_pred))
     global a
     a = (a2.score(X_test,y_test))
@@ -58,26 +100,16 @@ def svc_linear(X_train, X_test, y_train, y_test, results):
 
 
 #SVC polymnial classifier
-def svc_polymnial(X_train, X_test, y_train, y_test, results):
+def svc_polymnial(X_train, X_test, y_train, y_test, results, pierwszy):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją wielomianową')
     global b2
     b2 = SVC(kernel='poly', gamma="scale", max_iter=-1)
     b2.fit(X_train, y_train)
     y_pred = b2.predict(X_test)
-    labels = ['M', 'R']
-    cm = confusion_matrix(y_test,y_pred, labels)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(cm)
-    plt.title('Macierz klasyfikacji dla funkcji wielomianowej')
-    fig.colorbar(cax)
-    ax.set_xticklabels([''] + labels)
-    ax.set_yticklabels([''] + labels)
-    plt.xlabel('Predykcja')
-    plt.ylabel('Rzeczywitość')
-    global b1
-    b1 = plt
+    labels = ['Mina', 'Skała']
+    plot_confusion_matrix(y_test, y_pred, classes=labels, title='Macierz klasyfikacji dla funkcji wielomianowej')
+    plt.savefig(f"{pierwszy}wielomianowy.png")
     print(classification_report(y_test, y_pred))
     global b
     b = (b2.score(X_test,y_test))
@@ -89,26 +121,16 @@ def svc_polymnial(X_train, X_test, y_train, y_test, results):
 
 
 # SVC RBF classifier
-def svc_rbf(X_train, X_test, y_train, y_test, results):
+def svc_rbf(X_train, X_test, y_train, y_test, results, pierwszy):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją gaussowską')
     global c2
     c2 = SVC(kernel='rbf', gamma="scale", max_iter=-1)
     c2.fit(X_train, y_train)
     y_pred = c2.predict(X_test)
-    labels = ['M', 'R']
-    cm = confusion_matrix(y_test,y_pred, labels)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(cm)
-    plt.title('Macierz klasyfikacji dla funkcji gaussowskiej')
-    fig.colorbar(cax)
-    ax.set_xticklabels([''] + labels)
-    ax.set_yticklabels([''] + labels)
-    plt.xlabel('Predykcja')
-    plt.ylabel('Rzeczywitość')
-    global c1
-    c1 = plt
+    labels = ['Mina', 'Skała']
+    plot_confusion_matrix(y_test, y_pred, classes=labels, title='Macierz klasyfikacji dla funkcji gaussowskiej')
+    plt.savefig(f"{pierwszy}gauss.png")
     print(classification_report(y_test, y_pred))
     global c
     c = (c2.score(X_test,y_test))
@@ -120,26 +142,16 @@ def svc_rbf(X_train, X_test, y_train, y_test, results):
 
 
 # SVC sigmoid classifier
-def svc_sigmoid(X_train, X_test, y_train, y_test, results):
+def svc_sigmoid(X_train, X_test, y_train, y_test, results, pierwszy):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją sigmoidalną')
     global d2
     d2 = SVC(kernel='sigmoid', gamma="scale", max_iter=-1)
     d2.fit(X_train, y_train)
     y_pred = d2.predict(X_test)
-    labels = ['M', 'R']
-    cm = confusion_matrix(y_test,y_pred, labels)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(cm)
-    plt.title('Macierz klasyfikacji dla funkcji sigmoidalnej')
-    fig.colorbar(cax)
-    ax.set_xticklabels([''] + labels)
-    ax.set_yticklabels([''] + labels)
-    plt.xlabel('Predykcja')
-    plt.ylabel('Rzeczywitość')
-    global d1
-    d1 = plt
+    labels = ['Mina', 'Skała']
+    plot_confusion_matrix(y_test, y_pred, classes=labels, title='Macierz klasyfikacji dla funkcji sigmoidalnej')
+    plt.savefig(f"{pierwszy}sigmoid.png")
     print(classification_report(y_test, y_pred))
     global d
     d = (d2.score(X_test,y_test))
@@ -233,23 +245,8 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     return plt
 
 pierwszy = "pierwszy"
-def score(pierwszy, results):
-    if max(results) == a:
-        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje liniową')
-        print(max(results))
-        a1.savefig(f"{pierwszy}liniowy.png")
-    elif max(results) == b:
-        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje wielomianową')
-        print(max(results))
-        b1.savefig(f"{pierwszy}wielomianowy.png")
-    elif max(results) == c:
-        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje gaussowską')
-        print(max(results))
-        c1.savefig(f"{pierwszy}gauss.png")
-    elif max(results) == d:
-        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje sigmoidalną')
-        print(max(results))
-        d1.savefig(f"{pierwszy}sigmoid.png")
+drugi = "drugi"
+
 def plots(pierwszy,X,y):
     title = "Wykres z przedstawioną skutecznością dla klasyfikatora liniowego"
     a3 = plot_learning_curve(a2, title, X ,y, (0.0, 1.01), cv=cv, n_jobs=4)
@@ -264,11 +261,10 @@ def plots(pierwszy,X,y):
     d3 = plot_learning_curve(d2, title, X,y, (0.0, 1.01), cv=cv, n_jobs=4)
     d3.savefig(f"{pierwszy}sigmoid-przebieg.png")
 
-svc_linear(X_train, X_test, y_train, y_test, results1)
-svc_polymnial(X_train, X_test, y_train, y_test, results1)
-svc_rbf(X_train, X_test, y_train, y_test, results1)
-svc_sigmoid(X_train, X_test, y_train, y_test, results1)
-score(pierwszy,results1)
+svc_linear(X_train, X_test, y_train, y_test, results1, pierwszy)
+svc_polymnial(X_train, X_test, y_train, y_test, results1, pierwszy)
+svc_rbf(X_train, X_test, y_train, y_test, results1, pierwszy)
+svc_sigmoid(X_train, X_test, y_train, y_test, results1, pierwszy)
 plots(pierwszy,X,y)
 
 
@@ -299,10 +295,8 @@ pca.fit(X_train)
 X_train = pca.transform(X_train)
 X_test = pca.transform(X_test)
 
-svc_linear(X_train, X_test, y_train, y_test, results2)
-svc_polymnial(X_train, X_test, y_train, y_test, results2)
-svc_rbf(X_train, X_test, y_train, y_test, results2)
-svc_sigmoid(X_train, X_test, y_train, y_test, results2)
-drugi = "drugi"
-score(drugi,results2)
+svc_linear(X_train, X_test, y_train, y_test, results2, drugi)
+svc_polymnial(X_train, X_test, y_train, y_test, results2, drugi)
+svc_rbf(X_train, X_test, y_train, y_test, results2, drugi)
+svc_sigmoid(X_train, X_test, y_train, y_test, results2, drugi)
 plots(drugi,X_train,y_train)
