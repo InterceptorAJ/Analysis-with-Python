@@ -1,42 +1,38 @@
-import sys, os
-import matplotlib.pyplot as plt
-from sklearn import svm
+from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split, GridSearchCV, ShuffleSplit
 from sklearn.metrics import classification_report, confusion_matrix
 import pandas as pd
 from sklearn.svm import SVC
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn import svm, datasets
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
-from sklearn.utils.multiclass import unique_labels
 from sklearn.model_selection import learning_curve
+from sklearn.preprocessing import MinMaxScaler
 
 
-X = []
-y = []
-results = []
+
+results1 = []
+results2 = []
 title = "Wykres z przedstawioną skutecznością klasyfikatora"
-sonar_data = pd.read_csv(f'sonar.csv')
 sonar_data = pd.read_csv(f'sonar.csv',
     names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
             "S", "T", "U", "V", "W", "X", "Y", "Z", "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
             "I1", "J1", "K1", "L1", "M1", "N1", "O1", "P1", "Q1", "R1", "S1", "T1", "U1", "V1", "W1",
             "X1", "Y1", "Z1", "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2", "Class"])
-
 X = sonar_data.drop("Class", axis=1)
 y = sonar_data["Class"]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20)
-cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state=0)
+cv = ShuffleSplit(test_size=0.2, random_state=0)
 
 # SVC linear classifier
-def svc_linear():
+def svc_linear(X_train, X_test, y_train, y_test, results):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją liniową')
     global a2
     a2 = SVC(kernel='linear', gamma='scale', max_iter=-1)
     a2.fit(X_train, y_train)
+    global y_pred
     y_pred = a2.predict(X_test)
     labels = ['M', 'R']
     cm = confusion_matrix(y_test,y_pred, labels)
@@ -53,15 +49,16 @@ def svc_linear():
     a1 = plt
     print(classification_report(y_test,y_pred))
     global a
-    a = (a2.score(X,y))
+    a = (a2.score(X_test,y_test))
     a = round(a, 2)
     results.append(a)
     print(f'Wynik uzyskany')
     print(a)
+    return a
 
 
 #SVC polymnial classifier
-def svc_polymnial():
+def svc_polymnial(X_train, X_test, y_train, y_test, results):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją wielomianową')
     global b2
@@ -83,15 +80,16 @@ def svc_polymnial():
     b1 = plt
     print(classification_report(y_test, y_pred))
     global b
-    b = (b2.score(X,y))
+    b = (b2.score(X_test,y_test))
     b = round(b, 2)
     results.append(b)
     print(f'Wynik uzyskany')
     print(b)
+    return b
 
 
 # SVC RBF classifier
-def svc_rbf():
+def svc_rbf(X_train, X_test, y_train, y_test, results):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją gaussowską')
     global c2
@@ -113,15 +111,16 @@ def svc_rbf():
     c1 = plt
     print(classification_report(y_test, y_pred))
     global c
-    c = (c2.score(X,y))
+    c = (c2.score(X_test,y_test))
     c = round(c, 2)
     results.append(c)
     print(f'Wynik uzyskany')
     print(c)
+    return c
 
 
 # SVC sigmoid classifier
-def svc_sigmoid():
+def svc_sigmoid(X_train, X_test, y_train, y_test, results):
     print(f'----------------------------------------------------------------------------------------------------------')
     print(f'Klasyfikator z funkcją sigmoidalną')
     global d2
@@ -143,16 +142,12 @@ def svc_sigmoid():
     d1 = plt
     print(classification_report(y_test, y_pred))
     global d
-    d = (d2.score(X,y))
+    d = (d2.score(X_test,y_test))
     d = round(d, 2)
     results.append(d)
     print(f'Wynik uzyskany')
     print(d)
-
-svc_linear()
-svc_polymnial()
-svc_rbf()
-svc_sigmoid()
+    return d
 
 
 def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
@@ -214,8 +209,8 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     plt.title(title)
     if ylim is not None:
         plt.ylim(*ylim)
-    plt.xlabel("Training examples")
-    plt.ylabel("Score")
+    plt.xlabel("Iteracja")
+    plt.ylabel("Wynik")
     train_sizes, train_scores, test_scores = learning_curve(
         estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes)
     train_scores_mean = np.mean(train_scores, axis=1)
@@ -225,41 +220,89 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     plt.grid()
 
     plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
-                     train_scores_mean + train_scores_std, alpha=0.1,
+                     train_scores_mean + train_scores_std, alpha=0.01,
                      color="r")
     plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
-                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
+                     test_scores_mean + test_scores_std, alpha=0.01, color="g")
     plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
-             label="Wynik")
+             label="Wynik treningowy:")
     plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
-             label="Cross-validation score")
+             label="Wynik kroswalidacji")
 
     plt.legend(loc="best")
     return plt
 
-plot_learning_curve(b2, title, X, y, (0.7, 1.01), cv=cv, n_jobs=4)
+pierwszy = "pierwszy"
+def score(pierwszy, results):
+    if max(results) == a:
+        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje liniową')
+        print(max(results))
+        a1.savefig(f"{pierwszy}liniowy.png")
+    elif max(results) == b:
+        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje wielomianową')
+        print(max(results))
+        b1.savefig(f"{pierwszy}wielomianowy.png")
+    elif max(results) == c:
+        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje gaussowską')
+        print(max(results))
+        c1.savefig(f"{pierwszy}gauss.png")
+    elif max(results) == d:
+        print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje sigmoidalną')
+        print(max(results))
+        d1.savefig(f"{pierwszy}sigmoid.png")
+def plots(pierwszy,X,y):
+    title = "Wykres z przedstawioną skutecznością dla klasyfikatora liniowego"
+    a3 = plot_learning_curve(a2, title, X ,y, (0.0, 1.01), cv=cv, n_jobs=4)
+    a3.savefig(f"{pierwszy}liniowy-przebieg.png")
+    title = "Wykres z przedstawioną skutecznością dla klasyfikatora wielomianowego"
+    b3 = plot_learning_curve(b2, title, X,y, (0.0, 1.01), cv=cv, n_jobs=4)
+    b3.savefig(f"{pierwszy}wielomianowy-przebieg.png")
+    title = "Wykres z przedstawioną skutecznością dla klasyfikatora gaussowskiego"
+    c3 = plot_learning_curve(c2, title, X,y, (0.0, 1.01), cv=cv, n_jobs=4)
+    c3.savefig(f"{pierwszy}gauss-przebieg.png")
+    title = "Wykres z przedstawioną skutecznością dla klasyfikatora sigmoidalnego"
+    d3 = plot_learning_curve(d2, title, X,y, (0.0, 1.01), cv=cv, n_jobs=4)
+    d3.savefig(f"{pierwszy}sigmoid-przebieg.png")
+
+svc_linear(X_train, X_test, y_train, y_test, results1)
+svc_polymnial(X_train, X_test, y_train, y_test, results1)
+svc_rbf(X_train, X_test, y_train, y_test, results1)
+svc_sigmoid(X_train, X_test, y_train, y_test, results1)
+score(pierwszy,results1)
+plots(pierwszy,X,y)
 
 
-if max(results) == a:
-    print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje liniową')
-    print(max(results))
-    a1.show()
-    plot_learning_curve(a2, title, X, y, (0.7, 1.01), cv=cv, n_jobs=4)
+plt.clf()
+minmax = MinMaxScaler().fit_transform(X)
+pca = PCA().fit(minmax)
+plt.plot(np.cumsum(pca.explained_variance_ratio_))
+plt.xlabel('number of components')
+plt.ylabel('cumulative explained variance')
+plt.savefig("Wykres-1.png")
+print("Wynik analizy dla wszystkich 60-ciu komponentów:")
+print(pca.explained_variance_ratio_)
 
-if max(results) == b:
-    print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje wielomianową')
-    print(max(results))
-    b1.show()
-    plot_learning_curve(b2, title, X, y, (0.7, 1.01), cv=cv, n_jobs=4)
 
-if max(results) == c:
-    print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje gaussowską')
-    print(max(results))
-    c1.show()
-    plot_learning_curve(c2, title, X, y, (0.7, 1.01), cv=cv, n_jobs=4)
+plt.clf()
+pca = PCA(n_components=2).fit(X)
+plt.plot(np.cumsum(pca.explained_variance_ratio_))
+plt.xlabel('number of components')
+plt.ylabel('cumulative explained variance')
+plt.savefig("Wykres-2.png")
+print("Wynik analizy głównych składowych PCA dla dwóch komponentów:")
+print(pca.explained_variance_ratio_)
 
-if max(results) == d:
-    print(f'Najbardziej dokładny jest klasyfikator oparty o funkcje sigmoidalną')
-    print(max(results))
-    d1.show()
-    plot_learning_curve(d2, title, X, y, (0.7, 1.01), cv=cv, n_jobs=4)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+pca = PCA(n_components=2)
+pca.fit(X_train)
+X_train = pca.transform(X_train)
+X_test = pca.transform(X_test)
+
+svc_linear(X_train, X_test, y_train, y_test, results2)
+svc_polymnial(X_train, X_test, y_train, y_test, results2)
+svc_rbf(X_train, X_test, y_train, y_test, results2)
+svc_sigmoid(X_train, X_test, y_train, y_test, results2)
+drugi = "drugi"
+score(drugi,results2)
+plots(drugi,X_train,y_train)
